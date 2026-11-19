@@ -1,0 +1,1 @@
+import AdminSection from "@/components/AdminSection"; export default function Page(){return <AdminSection title="Waste reports" description="Review submitted waste reports and their verification status."/>}
