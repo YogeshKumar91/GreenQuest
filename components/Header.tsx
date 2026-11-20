@@ -47,7 +47,6 @@ type AppNotification = {
 export default function Header({ onMenuClick }: HeaderProps) {
   const [web3auth, setWeb3Auth] = useState<Web3Auth | null>(null);
   const [loggedIn, setLoggedIn] = useState(false);
-  const [loading, setLoading] = useState(true);
   const [userInfo, setUserInfo] = useState<Awaited<
     ReturnType<Web3Auth["getUserInfo"]>
   > | null>(null);
@@ -64,7 +63,6 @@ export default function Header({ onMenuClick }: HeaderProps) {
 
       if (!clientId) {
         console.error("Web3Auth client ID is missing. Set NEXT_PUBLIC_WEB3AUTH_CLIENT_ID.");
-        setLoading(false);
         return;
       }
 
@@ -89,11 +87,9 @@ export default function Header({ onMenuClick }: HeaderProps) {
           }
         }
 
-        setLoading(false);
         console.log("✅ Web3Auth Ready!");
       } catch (error) {
         console.error("❌ Web3Auth initialization failed:", error);
-        setLoading(false);
       }
     };
 
@@ -193,10 +189,6 @@ export default function Header({ onMenuClick }: HeaderProps) {
       )
     );
   };
-
-  if (loading) {
-    return <div>Loading Web3Auth...</div>;
-  }
 
   return (
     <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
