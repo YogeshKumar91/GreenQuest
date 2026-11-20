@@ -122,6 +122,8 @@ GROQ_API_KEY=your-groq-api-key
 
 Do not commit real credentials. For a hosted deployment, configure these values using the hosting provider's environment-variable or secret-management settings.
 
+For Render, set `NEXT_PUBLIC_WEB3AUTH_CLIENT_ID` in the service's environment before deploying (Next.js embeds public variables during the build). Also add the deployed Render origin, such as `https://your-service.onrender.com`, to the allowed origins for your Web3Auth project.
+
 ## Available scripts
 
 | Command | Description |

@@ -154,32 +154,6 @@ export default function Header({ onMenuClick }: HeaderProps) {
     };
   }, [userInfo]);
 
-  const login = async () => {
-    if (!web3auth) {
-      console.error("🚨 Web3Auth is not initialized.");
-      return;
-    }
-
-    try {
-      console.log("🔄 Attempting login...");
-      const connection = await web3auth.connect();
-      if (!connection) return;
-
-      const user = await web3auth.getUserInfo();
-      console.log("👤 User Info:", user);
-      setUserInfo(user);
-      if (!user.email) {
-        throw new Error("Google did not return an email address for this account.");
-      }
-      await createUser(user.email, user.name || "GreenQuest user");
-      localStorage.setItem("userEmail", user.email);
-      setLoggedIn(true);
-      router.push("/report");
-    } catch (error) {
-      console.error("❌ Login Error:", error);
-    }
-  };
-
   const logout = async () => {
     if (!web3auth) {
       console.log("web3auth not initialized yet");
@@ -302,7 +276,7 @@ export default function Header({ onMenuClick }: HeaderProps) {
           </div>
           {!loggedIn ? (
             <Button
-              onClick={login}
+              onClick={() => router.push("/login")}
               className="bg-green-600 hover:bg-green-700 text-white text-sm md:text-base"
             >
               Login

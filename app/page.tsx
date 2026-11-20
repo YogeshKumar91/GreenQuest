@@ -1,13 +1,12 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Leaf, Recycle, Users, Coins, MapPin } from "lucide-react";
 import { useRouter } from "next/navigation";
 import {
   getRecentReports,
   getAllRewards,
   getWasteCollectionTasks,
-  createUser,
 } from "@/utils/db/actions";
 import { Web3Auth, WEB3AUTH_NETWORK } from "@web3auth/modal";
 import ImpactCard from "@/components/ImpactCard";
@@ -29,42 +28,25 @@ export default function Home() {
 
   useEffect(() => {
     async function initWeb3Auth() {
-      if (!clientId) {
-        console.error("Web3Auth client ID is missing. Set NEXT_PUBLIC_WEB3AUTH_CLIENT_ID.");
-        return;
-      }
+      if (!clientId) return;
 
-      if (!web3authRef.current) {
-        web3authRef.current = new Web3Auth({
-          clientId,
-          web3AuthNetwork: WEB3AUTH_NETWORK.SAPPHIRE_DEVNET,
-        });
-        await web3authRef.current.init();
-        if (web3authRef.current.connection) {
-          setLoggedIn(true);
+      try {
+        if (!web3authRef.current) {
+          web3authRef.current = new Web3Auth({
+            clientId,
+            web3AuthNetwork: WEB3AUTH_NETWORK.SAPPHIRE_DEVNET,
+          });
+          await web3authRef.current.init();
+          if (web3authRef.current.connection) {
+            setLoggedIn(true);
+          }
         }
+      } catch (error) {
+        console.error("Web3Auth initialization failed:", error);
       }
     }
     initWeb3Auth();
   }, []);
-
-  const login = useCallback(async () => {
-    try {
-      const connection = await web3authRef.current?.connect();
-      if (!connection) return;
-      const user = await web3authRef.current?.getUserInfo();
-      if (!user?.email) {
-        throw new Error("Google did not return an email address for this account.");
-      }
-
-      await createUser(user.email, user.name || "GreenQuest user");
-      localStorage.setItem("userEmail", user.email);
-      setLoggedIn(true);
-      router.push("/report");
-    } catch (error) {
-      console.error("Login failed:", error);
-    }
-  }, [router]);
 
   useEffect(() => {
     async function fetchImpactData() {
@@ -119,7 +101,7 @@ export default function Home() {
           rewarding!
         </p>
         <ActionButton
-          onClick={loggedIn ? () => router.push("/report") : login}
+          onClick={() => router.push(loggedIn ? "/report" : "/login")}
           label={loggedIn ? "Report Waste" : "Get Started"}
         />
       </section>

@@ -11,13 +11,18 @@ const clientId = process.env.NEXT_PUBLIC_WEB3AUTH_CLIENT_ID;
 
 export default function LoginPage() {
   const [loading, setLoading] = useState(true);
+  const [signingIn, setSigningIn] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
   const router = useRouter();
   const [web3auth, setWeb3Auth] = useState<Web3Auth | null>(null);
 
   useEffect(() => {
     const initWeb3Auth = async () => {
       if (!clientId) {
-        console.error("Web3Auth clientId is missing. Set it in .env.local");
+        setErrorMessage(
+          "Sign-in is not configured. Set NEXT_PUBLIC_WEB3AUTH_CLIENT_ID in your hosting environment and redeploy."
+        );
+        setLoading(false);
         return;
       }
 
@@ -38,6 +43,9 @@ export default function LoginPage() {
         }
       } catch (error) {
         console.error("Web3Auth initialization error:", error);
+        setErrorMessage(
+          "Sign-in could not be initialized. Check that this site's domain is allowed in your Web3Auth project."
+        );
       } finally {
         setLoading(false);
       }
@@ -48,10 +56,12 @@ export default function LoginPage() {
 
   const login = async () => {
     if (!web3auth) {
-      console.log("Web3Auth is not ready yet.");
+      setErrorMessage("Sign-in is not ready yet. Please try again.");
       return;
     }
 
+    setSigningIn(true);
+    setErrorMessage("");
     try {
       console.log("Logging in...");
       const connection = await web3auth.connect();
@@ -67,6 +77,11 @@ export default function LoginPage() {
       router.push("/"); // Redirect to home after login
     } catch (error) {
       console.error("Login error:", error);
+      setErrorMessage(
+        "Sign-in failed. Check your Web3Auth domain configuration and try again."
+      );
+    } finally {
+      setSigningIn(false);
     }
   };
 
@@ -77,12 +92,21 @@ export default function LoginPage() {
         <p className="text-gray-600 mb-8 text-lg">
           Sign in to continue your journey in sustainable waste management.
         </p>
+        {errorMessage && (
+          <p role="alert" className="mb-6 text-sm text-red-600">
+            {errorMessage}
+          </p>
+        )}
         <Button
           onClick={login}
           className="w-full bg-green-600 hover:bg-green-700 text-white text-lg py-4 rounded-full font-medium transition-all duration-300 ease-in-out transform hover:scale-105"
-          disabled={loading}
+          disabled={loading || signingIn || !web3auth}
         >
-          {loading ? "Loading..." : "Sign In with our Platform"}
+          {loading
+            ? "Loading..."
+            : signingIn
+              ? "Signing in..."
+              : "Sign In with our Platform"}
           <ArrowRight className="ml-2 h-5 w-5" />
         </Button>
       </div>
