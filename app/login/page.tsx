@@ -37,10 +37,6 @@ export default function LoginPage() {
         console.log("Web3Auth initialized successfully");
 
         setWeb3Auth(web3authInstance);
-
-        if (web3authInstance.connection) {
-          router.push("/"); // Redirect to home after login
-        }
       } catch (error) {
         console.error("Web3Auth initialization error:", error);
         setErrorMessage(
@@ -52,7 +48,7 @@ export default function LoginPage() {
     };
 
     initWeb3Auth();
-  }, [router]);
+  }, []);
 
   const login = async () => {
     if (!web3auth) {
