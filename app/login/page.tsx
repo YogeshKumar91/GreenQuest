@@ -1,11 +1,15 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Web3Auth, WEB3AUTH_NETWORK } from "@web3auth/modal";
+import { Web3Auth } from "@web3auth/modal";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 import { createUser } from "@/utils/db/actions";
+import {
+  getWeb3Auth,
+  notifyWeb3AuthStateChanged,
+} from "@/lib/web3auth";
 
 const clientId = process.env.NEXT_PUBLIC_WEB3AUTH_CLIENT_ID;
 
@@ -27,16 +31,14 @@ export default function LoginPage() {
       }
 
       try {
-        const web3authInstance = new Web3Auth({
-          clientId,
-          web3AuthNetwork: WEB3AUTH_NETWORK.SAPPHIRE_DEVNET,
-        });
-
         console.log("Initializing Web3Auth...");
-        await web3authInstance.init();
+        const web3authInstance = await getWeb3Auth();
         console.log("Web3Auth initialized successfully");
 
         setWeb3Auth(web3authInstance);
+        if (web3authInstance.connection) {
+          router.replace("/");
+        }
       } catch (error) {
         console.error("Web3Auth initialization error:", error);
         setErrorMessage(
@@ -48,7 +50,7 @@ export default function LoginPage() {
     };
 
     initWeb3Auth();
-  }, []);
+  }, [router]);
 
   const login = async () => {
     if (!web3auth) {
@@ -69,8 +71,9 @@ export default function LoginPage() {
 
       await createUser(user.email, user.name || "GreenQuest user");
       localStorage.setItem("userEmail", user.email);
+      notifyWeb3AuthStateChanged();
       console.log("User logged in successfully");
-      router.push("/"); // Redirect to home after login
+      router.replace("/");
     } catch (error) {
       console.error("Login error:", error);
       setErrorMessage(

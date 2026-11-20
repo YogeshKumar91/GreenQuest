@@ -59,7 +59,7 @@ export default function ReportPage() {
   const [searchBox, setSearchBox] =
     useState<google.maps.places.SearchBox | null>(null);
 
-  const { isLoaded } = useJsApiLoader({
+  const { isLoaded, loadError } = useJsApiLoader({
     id: "google-map-script",
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "",
     libraries: libraries,
@@ -339,6 +339,12 @@ export default function ReportPage() {
             >
               Location
             </label>
+            {loadError && (
+              <p role="status" className="mb-1 text-sm text-amber-700">
+                Location suggestions are unavailable. You can still enter the
+                location manually.
+              </p>
+            )}
             {isLoaded ? (
               <StandaloneSearchBox
                 onLoad={onLoad}

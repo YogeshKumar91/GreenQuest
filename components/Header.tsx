@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
   Menu,
@@ -21,8 +21,12 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
-import { Web3Auth, WEB3AUTH_NETWORK } from "@web3auth/modal";
+import { Web3Auth } from "@web3auth/modal";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
+import {
+  getWeb3Auth,
+  notifyWeb3AuthStateChanged,
+} from "@/lib/web3auth";
 import {
   createUser,
   getUnreadNotifications,
@@ -51,6 +55,7 @@ export default function Header({ onMenuClick }: HeaderProps) {
     ReturnType<Web3Auth["getUserInfo"]>
   > | null>(null);
   const router = useRouter();
+  const pathname = usePathname();
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const isMobile = useMediaQuery("(max-width: 768px)");
   const [balance, setBalance] = useState(0);
@@ -59,8 +64,6 @@ export default function Header({ onMenuClick }: HeaderProps) {
 
   useEffect(() => {
     const initializeWeb3Auth = async () => {
-      if (web3auth) return; // Prevent multiple initializations
-
       if (!clientId) {
         console.error("Web3Auth client ID is missing. Set NEXT_PUBLIC_WEB3AUTH_CLIENT_ID.");
         return;
@@ -68,25 +71,8 @@ export default function Header({ onMenuClick }: HeaderProps) {
 
       try {
         console.log("🟢 Initializing Web3Auth...");
-        const web3authInstance = new Web3Auth({
-          clientId: clientId,
-          web3AuthNetwork: WEB3AUTH_NETWORK.SAPPHIRE_DEVNET,
-        });
-
+        const web3authInstance = await getWeb3Auth();
         setWeb3Auth(web3authInstance);
-        await web3authInstance.init();
-
-        const isConnected = Boolean(web3authInstance.connection);
-        setLoggedIn(isConnected);
-
-        if (isConnected) {
-          const user = await web3authInstance.getUserInfo();
-          setUserInfo(user);
-          if (user.email) {
-            localStorage.setItem("userEmail", user.email);
-          }
-        }
-
         console.log("✅ Web3Auth Ready!");
       } catch (error) {
         console.error("❌ Web3Auth initialization failed:", error);
@@ -94,7 +80,38 @@ export default function Header({ onMenuClick }: HeaderProps) {
     };
 
     initializeWeb3Auth();
-  }, [web3auth]);
+  }, []);
+
+  useEffect(() => {
+    if (!web3auth) return;
+
+    let cancelled = false;
+    const syncAuthState = async () => {
+      const isConnected = Boolean(web3auth.connection);
+      setLoggedIn(isConnected);
+
+      if (!isConnected) {
+        setUserInfo(null);
+        return;
+      }
+
+      const user = await web3auth.getUserInfo();
+      if (cancelled) return;
+
+      setUserInfo(user);
+      if (user.email) {
+        localStorage.setItem("userEmail", user.email);
+      }
+    };
+
+    syncAuthState().catch((error: unknown) => {
+      console.error("Failed to refresh Web3Auth session:", error);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [pathname, web3auth]);
 
   useEffect(() => {
     const fetchNotifications = async () => {
@@ -160,6 +177,8 @@ export default function Header({ onMenuClick }: HeaderProps) {
       setLoggedIn(false);
       setUserInfo(null);
       localStorage.removeItem("userEmail");
+      notifyWeb3AuthStateChanged();
+      router.replace("/");
     } catch (error) {
       console.error("Error during logout:", error);
     }

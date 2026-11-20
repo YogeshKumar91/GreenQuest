@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { Leaf, Recycle, Users, Coins, MapPin } from "lucide-react";
 import { useRouter } from "next/navigation";
 import {
@@ -8,16 +8,17 @@ import {
   getAllRewards,
   getWasteCollectionTasks,
 } from "@/utils/db/actions";
-import { Web3Auth, WEB3AUTH_NETWORK } from "@web3auth/modal";
+import {
+  getWeb3Auth,
+  WEB3AUTH_STATE_CHANGED_EVENT,
+} from "@/lib/web3auth";
 import ImpactCard from "@/components/ImpactCard";
 import FeatureCard from "@/components/FeatureCard";
 import ActionButton from "@/components/ActionButton";
-const clientId = process.env.NEXT_PUBLIC_WEB3AUTH_CLIENT_ID;
 
 export default function Home() {
   const [loggedIn, setLoggedIn] = useState(false);
   const router = useRouter();
-  const web3authRef = useRef<Web3Auth | null>(null);
   const [impactData, setImpactData] = useState({
     wasteCollected: 0,
     reportsSubmitted: 0,
@@ -27,25 +28,35 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    async function initWeb3Auth() {
-      if (!clientId) return;
+    let active = true;
+    let web3auth: Awaited<ReturnType<typeof getWeb3Auth>> | null = null;
+    const updateLoginState = () => {
+      if (active) setLoggedIn(Boolean(web3auth?.connection));
+    };
+    const handleAuthStateChanged = () => updateLoginState();
 
-      try {
-        if (!web3authRef.current) {
-          web3authRef.current = new Web3Auth({
-            clientId,
-            web3AuthNetwork: WEB3AUTH_NETWORK.SAPPHIRE_DEVNET,
-          });
-          await web3authRef.current.init();
-          if (web3authRef.current.connection) {
-            setLoggedIn(true);
-          }
-        }
-      } catch (error) {
+    window.addEventListener(
+      WEB3AUTH_STATE_CHANGED_EVENT,
+      handleAuthStateChanged
+    );
+
+    getWeb3Auth()
+      .then((instance) => {
+        if (!active) return;
+        web3auth = instance;
+        updateLoginState();
+      })
+      .catch((error: unknown) => {
         console.error("Web3Auth initialization failed:", error);
-      }
-    }
-    initWeb3Auth();
+      });
+
+    return () => {
+      active = false;
+      window.removeEventListener(
+        WEB3AUTH_STATE_CHANGED_EVENT,
+        handleAuthStateChanged
+      );
+    };
   }, []);
 
   useEffect(() => {

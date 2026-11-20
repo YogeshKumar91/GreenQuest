@@ -100,7 +100,7 @@ npm run db:push
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000). If the configured Web3Auth/hCaptcha flow rejects `localhost`, try [http://greenquest.lvh.me:3000](http://greenquest.lvh.me:3000), which resolves to the local machine with a hostname accepted by that flow.
+Open [http://greenquest.lvh.me:3000](http://greenquest.lvh.me:3000). This local hostname avoids hCaptcha's `localhost` warning. Add that exact origin to the allowed origins in your Web3Auth project and to the Google Maps key's HTTP referrer restrictions.
 
 ## Environment variables
 
@@ -108,7 +108,7 @@ Open [http://localhost:3000](http://localhost:3000). If the configured Web3Auth/
 | --- | --- | --- |
 | `DATABASE_URL` | Database queries and Drizzle commands | PostgreSQL connection string. |
 | `NEXT_PUBLIC_WEB3AUTH_CLIENT_ID` | User sign-in | Public Web3Auth client ID. |
-| `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` | Location search on the report page | Enable the required Maps/Places APIs and restrict the key appropriately. |
+| `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` | Location search on the report page | Enable Maps JavaScript API and Places API, configure billing, and allow the local or deployed site origin in the key's HTTP referrer restrictions. |
 | `GROQ_API_KEY` | Live image verification | Server-side secret. Do not expose it with a `NEXT_PUBLIC_` prefix. |
 
 Example variable names (replace the placeholders with your own credentials):
